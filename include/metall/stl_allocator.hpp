@@ -156,6 +156,10 @@ class stl_allocator {
   // -------------------- //
 
   pointer priv_allocate(const size_type n) const {
+    if (n == 0) {
+      return nullptr;
+    }
+
     if (priv_max_size() < n) {
       throw std::bad_array_new_length();
     }
@@ -183,6 +187,10 @@ class stl_allocator {
 
   void priv_deallocate(pointer ptr,
                        [[maybe_unused]] const size_type size) const noexcept {
+    if (ptr == nullptr) {
+      return;
+    }
+
     if (!get_pointer_to_manager_kernel()) {
       logger::out(logger::level::error, __FILE__, __LINE__,
                   "nullptr: cannot access to manager kernel");
