@@ -7,10 +7,6 @@ if (BUILD_UTILITY)
 endif ()
 
 if (BUILD_C)
-    if (NOT Boost_FOUND)
-        return()
-    endif ()
-
     if (BUILD_SHARED_LIBS)
         message(STATUS "Building metall_c as a shared library")
     else ()
