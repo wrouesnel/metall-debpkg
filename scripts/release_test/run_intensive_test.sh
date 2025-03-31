@@ -1,37 +1,25 @@
-#!/bin/sh
+#!/bin/bash
 
 ##############################################################################
-# Bash script that builds and tests Metall with all compile time configurations
+# Bash script that builds and tests Metall with many compile time configurations
 # This test would take a few hours at least
 #
 # 1. Set environmental variables for build, if needed
-# Set manually:
-# export CC=gcc
-# export CXX=g++
-# export CMAKE_PREFIX_PATH=/path/to/boost:${CMAKE_PREFIX_PATH}
-#
-# Or, configure environmental variables using spack:
-# spack load g++
-# spack load boost
-#
-# Metall's CMake configuration step downloads the Boost C++ libraries automatically
-# if the library is not found.
-#
-# 2. Set optional environmental variables for test
-# export METALL_TEST_DIR=/tmp
-# export METALL_BUILD_DIR=./build
-# export METALL_LIMIT_MAKE_PARALLELS=n
-#
-# 3. Run this script from the root directory of Metall
-# sh ./scripts/release_test/full_build_and_test.sh
+# 2. Run this script from the root directory of Metall
+# cd metall # Metall root directory
+# bash ./scripts/release_test/run_intensive_test.sh
 ##############################################################################
 
 #######################################
 # main function
-# Globals:
-#   METALL_BUILD_DIR (option, defined if not given)
-#   METALL_TEST_DIR (option, defined if not given)
-#   METALL_ROOT_DIR (defined in this function, readonly)
+#
+# Used environmental variables:
+#   METALL_BUILD_DIR (option)
+#   METALL_TEST_DIR (option)
+#   METALL_BUILD_TYPES (option)
+#     E.g. METALL_BUILD_TYPES="Debug;Release;RelWithDebInfo"
+#   METALL_CMAKE_ADDITIONAL_OPTIONS (option)
+#     E.g. METALL_CMAKE_ADDITIONAL_OPTIONS="-DBOOST_INCLUDE_ROOT=/path/to/boost"
 # Outputs: STDOUT and STDERR
 #######################################
 main() {
@@ -87,7 +75,8 @@ main() {
               -DBUILD_EXAMPLE=ON \
               -DRUN_BUILD_AND_TEST_WITH_CI=OFF \
               -DBUILD_VERIFICATION=OFF \
-              -DCOMPILER_DEFS="${DEFS}"
+              -DCOMPILER_DEFS="${DEFS}" \
+              " ${METALL_CMAKE_ADDITIONAL_OPTIONS} "
             done
         done
       done

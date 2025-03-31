@@ -1,40 +1,30 @@
-#!/bin/sh
+#!/bin/bash
 
 ##############################################################################
-# Bash script that builds and tests Metall with many compile time configurations
+# Bash script that builds and tests Metall with multiple build types (e.g., Debug, Release)
+# This script is designed to be used in CI.
 #
-# 1. Set environmental variables for build
-# Set manually:
-# export CC=gcc
-# export CXX=g++
-# export CMAKE_PREFIX_PATH=/path/to/boost:${CMAKE_PREFIX_PATH}
-#
-# Or, configure environmental variables using spack:
-# spack load g++
-# spack load boost
-#
-# Metall's CMake configuration step downloads the Boost C++ libraries automatically
-# if the library is not found.
-#
-# 2. Set optional environmental variables for test
-# export METALL_TEST_DIR=/tmp
-# export METALL_LIMIT_MAKE_PARALLELS=n
-# export METALL_BUILD_TYPE="Debug;Release;RelWithDebInfo"
-#
-# 3. Run this script from the root directory of Metall
-# sh ./scripts/CI/build_and_test.sh
+# 1. Set environmental variables for CMake configuration and build, if needed.
+# 2. Run this script from the root directory of Metall
+# cd metall # Metall root directory
+# bash ./scripts/CI/run_ci_build_and_test.sh
 ##############################################################################
 
 #######################################
 # main function
-# Globals:
-#   METALL_BUILD_DIR (option, defined if not given)
-#   METALL_TEST_DIR (option, defined if not given)
-#   METALL_ROOT_DIR (defined in this function, readonly)
-#   METALL_BUILD_TYPE (option)
+# This function is required to be called from the root directory of Metall
+#
+# Used environmental variables:
+#   METALL_BUILD_DIR (option)
+#   METALL_TEST_DIR (option)
+#   METALL_BUILD_TYPES (option)
+#     E.g. METALL_BUILD_TYPES="Debug;Release;RelWithDebInfo"
+#   METALL_CMAKE_ADDITIONAL_OPTIONS (option)
+#     E.g. METALL_CMAKE_ADDITIONAL_OPTIONS="-DBOOST_INCLUDE_ROOT=/path/to/boost"
 # Outputs: STDOUT and STDERR
 #######################################
 main() {
+  # METALL_ROOT_DIR is required by run_build_and_test_kernel()
   readonly METALL_ROOT_DIR=${PWD}
   source ${METALL_ROOT_DIR}/scripts/test_kernel.sh
   source ${METALL_ROOT_DIR}/scripts/test_utility.sh
@@ -50,8 +40,8 @@ main() {
   export METALL_TEST_DIR
 
   local BUILD_TYPES=(Debug)
-  if [[ -n "${METALL_BUILD_TYPE}" ]]; then
-    BUILD_TYPES=($(echo $METALL_BUILD_TYPE | tr ";" "\n"))
+  if [[ -n "${METALL_BUILD_TYPES}" ]]; then
+    BUILD_TYPES=($(echo $METALL_BUILD_TYPES | tr ";" "\n"))
   fi
 
   for BUILD_TYPE in "${BUILD_TYPES[@]}"; do
@@ -65,7 +55,8 @@ main() {
         -DBUILD_UTILITY=ON \
         -DBUILD_EXAMPLE=ON \
         -DRUN_BUILD_AND_TEST_WITH_CI=ON \
-        -DBUILD_VERIFICATION=OFF
+        -DBUILD_VERIFICATION=OFF \
+        " ${METALL_CMAKE_ADDITIONAL_OPTIONS} "
   done
 }
 

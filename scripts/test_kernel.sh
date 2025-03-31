@@ -1,12 +1,15 @@
 #######################################
-# Builds and runs test programs
-# Globals:
-#   METALL_ROOT_DIR
-#   METALL_TEST_DIR
-#   METALL_BUILD_DIR
-#   METALL_LIMIT_MAKE_PARALLELS (option)
+# Builds and runs test programs.
+# This script does not test multiple GCC and Boost versions.
+# This script is designed to be called from another script.
+#
 # Arguments:
 #   CMake options to pass
+# Environmental variable arguments:
+#   METALL_ROOT_DIR (required)
+#   METALL_TEST_DIR (required)
+#   METALL_BUILD_DIR (required)
+#   METALL_LIMIT_MAKE_PARALLELS (option)
 # Outputs: STDOUT and STDERR
 #######################################
 run_build_and_test_kernel() {
@@ -62,9 +65,10 @@ run_build_and_test_kernel() {
 
 #######################################
 # Builds documents
-# Globals:
-#   METALL_ROOT_DIR
-#   METALL_BUILD_DIR
+#
+# Environmental variable arguments:
+#   METALL_ROOT_DIR (required)
+#   METALL_BUILD_DIR (required)
 # Outputs: STDOUT and STDERR
 #######################################
 build_docs() {

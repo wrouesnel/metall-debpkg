@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 # Runs all test cases with all GCC and boost combinations
 # Usage:
 #   Run this script from the root directory of Metall
-#   sh ./scripts/release_test/run_tests.sh
+#   bash ./scripts/release_test/run_tests.sh
 
 source ./scripts/test_utility.sh
 
@@ -16,9 +16,12 @@ for GCC_VER in "${GCC_VERSIONS[@]}"; do
     export METALL_BUILD_DIR="/dev/shm/metall_test_build_gcc${GCC_VER}_boost${BOOST_VER}"
 
     spack load gcc@${GCC_VER}
-    spack load boost@${BOOST_VER}
 
-    or_die sh ./scripts/release_test/full_build_and_test.sh
+    # Assumes that Spack set BOOST_ROOT
+    spack load boost@${BOOST_VER}
+    export METALL_CMAKE_ADDITIONAL_OPTIONS="-DBOOST_INCLUDE_ROOT=${BOOST_ROOT}/include"
+
+    or_die bash ./scripts/release_test/run_intensive_test.sh
   done
 done
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(FetchContent)
 
@@ -35,31 +35,29 @@ project(Metall
         DESCRIPTION "A persistent memory allocator for data-centric analytics"
         HOMEPAGE_URL "https://github.com/LLNL/metall")
 
-configure_file(MetallConfig.h.in MetallConfig.h)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ----- Setting up a INTERFACE library to install header files ----- #
 include(GNUInstallDirs)
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME}
-        INTERFACE $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/include>
+        INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
+# Generate MetallTargets.cmake file
 install(TARGETS ${PROJECT_NAME}
-        EXPORT ${PROJECT_NAME}_Targets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-install(EXPORT ${PROJECT_NAME}_Targets
+        EXPORT ${PROJECT_NAME}Targets
+        DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# install MetallTargets.cmake
+install(EXPORT ${PROJECT_NAME}Targets
         FILE ${PROJECT_NAME}Targets.cmake
         NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
 
+# Install header files
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/metall DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # -------------------------------------------------------------------------------- #
@@ -67,23 +65,30 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/metall DESTINATION ${CMAKE_INSTA
 # -------------------------------------------------------------------------------- #
 include(CMakePackageConfigHelpers)
 
-# generate the version file for the config file
-write_basic_package_version_file(
-        "${PROJECT_NAME}ConfigVersion.cmake"
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY ExactVersion)
-
-# create config file
+# Generate config file
 configure_package_config_file(
         "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
+        NO_SET_AND_CHECK_MACRO
+        NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
-# install config files
+# Generate the version file for the config file
+write_basic_package_version_file(
+        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY ExactVersion)
+
+# Install the config and version files
 install(FILES
         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
+
+# Make this project to also be used from a build directory
+export(EXPORT ${PROJECT_NAME}Targets
+        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
+)
 # -------------------------------------------------------------------------------- #
 
 
@@ -104,6 +109,8 @@ option(RUN_BUILD_AND_TEST_WITH_CI "Perform build and basic test with CI" OFF)
 option(BUILD_BENCH "Build the benchmark" OFF)
 option(BUILD_VERIFICATION "Build verification programs" OFF)
 set(COMPILER_DEFS "" CACHE STRING "A list of Metall compile definitions to be added to all targets")
+set(BOOST_INCLUDE_ROOT "" CACHE STRING "Path to Boost include directory. Specified value is passed to target_include_directories().")
+set(BOOST_FETCH_URL "" CACHE STRING "A URL or file path to an archived Boost source. Must be a version that supports CMake.")
 
 # ---------- Experimental options ---------- #
 set(UMAP_ROOT "" CACHE PATH "UMap installed root directory")
@@ -197,22 +204,44 @@ endif ()
 
 # ---------- Privateer ---------- #
 if (PRIVATEER_ROOT)
-    message(STATUS "Privateer Root is: ${PRIVATEER_ROOT}")
+    message(STATUS "Privateer Root is ${PRIVATEER_ROOT}")
     find_library(LIBPRIVATEER NAMES privateer PATHS ${PRIVATEER_ROOT}/lib)
 endif ()
 
 # ---------- Boost ---------- #
-include(find_boost_headers)
-find_boost_headers(1.80 FALSE)
-if (NOT Boost_FOUND)
-    message(STATUS "Fetching Boost")
-    FetchContent_Declare(Boost
-            URL https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2
-            SYSTEM)
+set(DEFAULT_BOOST_FETCH_URL "https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.gz")
+# List of boost components Metall depends on
+set(BOOST_INCLUDE_LIBRARIES json unordered interprocess container property_tree uuid graph)
+
+# Check if Boost was already available by FetchContent.
+# boost_POPULATED is set to TRUE if FetchContent_MakeAvailable was called
+if (boost_POPULATED)
+    message(STATUS "Boost was already populated")
+    # This is likely not required. We do this just in case.
+    FetchContent_Declare(Boost URL "${DEFAULT_BOOST_FETCH_URL}" SYSTEM)
     FetchContent_MakeAvailable(Boost)
-    set(BOOST_ROOT ${boost_SOURCE_DIR})
-    find_package(Boost 1.80 REQUIRED)
+elseif (BOOST_FETCH_URL)
+    message(STATUS "Will fetch Boost from ${BOOST_FETCH_URL}")
+    FetchContent_Declare(Boost URL "${BOOST_FETCH_URL}" SYSTEM)
+    FetchContent_MakeAvailable(Boost)
+elseif (BOOST_INCLUDE_ROOT)
+    message(STATUS "Will use Boost headers in ${BOOST_INCLUDE_ROOT}")
+else ()
+    # Check the Boost installed in the system
+    find_package(Boost 1.80 COMPONENTS ${BOOST_INCLUDE_LIBRARIES})
+
+    # If not found in the system, get default Boost version
+    if (NOT Boost_FOUND)
+        message(STATUS "Will fetch Boost from ${DEFAULT_BOOST_FETCH_URL}")
+        FetchContent_Declare(Boost URL "${DEFAULT_BOOST_FETCH_URL}" SYSTEM)
+        FetchContent_MakeAvailable(Boost)
+    endif ()
 endif ()
+
+# Boost Components to link
+foreach (lib ${BOOST_INCLUDE_LIBRARIES})
+    list(APPEND BOOST_COMPONENTS "Boost::${lib}")
+endforeach ()
 
 # -------------------------------------------------------------------------------- #
 # Add executable functions
@@ -242,8 +271,11 @@ function(add_common_compile_options name)
 endfunction()
 
 function(common_setup_for_metall_executable name)
-    target_include_directories(${name} PRIVATE ${Boost_INCLUDE_DIRS})
-
+    if (BOOST_INCLUDE_ROOT)
+        target_include_directories(${name} PRIVATE ${BOOST_INCLUDE_ROOT})
+    else()
+        target_link_libraries(${name} PRIVATE ${BOOST_COMPONENTS})
+    endif ()
     target_link_libraries(${name} PRIVATE Threads::Threads)
 
     # ----- Compile Options ----- #
@@ -318,13 +350,11 @@ endfunction()
 function(add_metall_executable name source)
     set(ADDED_METALL_EXE FALSE PARENT_SCOPE) # Tell the caller if an executable is added w/o issue
 
-    if (Boost_FOUND)
-        add_executable(${name} ${source})
-        target_include_directories(${name} PRIVATE ${PROJECT_SOURCE_DIR}/include)
-        common_setup_for_metall_executable(${name})
+    add_executable(${name} ${source})
+    target_include_directories(${name} PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    common_setup_for_metall_executable(${name})
 
-        set(ADDED_METALL_EXE TRUE PARENT_SCOPE)
-    endif ()
+    set(ADDED_METALL_EXE TRUE PARENT_SCOPE)
 endfunction()
 
 function(add_c_executable name source)
