@@ -109,8 +109,11 @@ option(RUN_BUILD_AND_TEST_WITH_CI "Perform build and basic test with CI" OFF)
 option(BUILD_BENCH "Build the benchmark" OFF)
 option(BUILD_VERIFICATION "Build verification programs" OFF)
 set(COMPILER_DEFS "" CACHE STRING "A list of Metall compile definitions to be added to all targets")
+# Options to specify the location of Boost. Setting multiple of these options will result in an error.
+set(BOOST_SOURCE_DIR CACHE STRING "Path to Boost libraries directory already uncompressed. Must be a version that supports CMake.")
+set(BOOST_FETCH_URL CACHE STRING "URL or file path to an archived Boost source. Must be a version that supports CMake.")
+# We keep this option for using old Boost versions. This option will be removed in the future.
 set(BOOST_INCLUDE_ROOT "" CACHE STRING "Path to Boost include directory. Specified value is passed to target_include_directories().")
-set(BOOST_FETCH_URL "" CACHE STRING "A URL or file path to an archived Boost source. Must be a version that supports CMake.")
 
 # ---------- Experimental options ---------- #
 set(UMAP_ROOT "" CACHE PATH "UMap installed root directory")
@@ -209,39 +212,26 @@ if (PRIVATEER_ROOT)
 endif ()
 
 # ---------- Boost ---------- #
-set(DEFAULT_BOOST_FETCH_URL "https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.gz")
-# List of boost components Metall depends on
-set(BOOST_INCLUDE_LIBRARIES json unordered interprocess container property_tree uuid graph)
-
-# Check if Boost was already available by FetchContent.
-# boost_POPULATED is set to TRUE if FetchContent_MakeAvailable was called
-if (boost_POPULATED)
-    message(STATUS "Boost was already populated")
-    # This is likely not required. We do this just in case.
-    FetchContent_Declare(Boost URL "${DEFAULT_BOOST_FETCH_URL}" SYSTEM)
-    FetchContent_MakeAvailable(Boost)
-elseif (BOOST_FETCH_URL)
-    message(STATUS "Will fetch Boost from ${BOOST_FETCH_URL}")
-    FetchContent_Declare(Boost URL "${BOOST_FETCH_URL}" SYSTEM)
-    FetchContent_MakeAvailable(Boost)
-elseif (BOOST_INCLUDE_ROOT)
-    message(STATUS "Will use Boost headers in ${BOOST_INCLUDE_ROOT}")
+if (BOOST_INCLUDE_ROOT)
+    message(STATUS "Boost include root is ${BOOST_INCLUDE_ROOT}")
 else ()
-    # Check the Boost installed in the system
-    find_package(Boost 1.80 COMPONENTS ${BOOST_INCLUDE_LIBRARIES})
+    include(fetch_boost)
 
-    # If not found in the system, get default Boost version
-    if (NOT Boost_FOUND)
-        message(STATUS "Will fetch Boost from ${DEFAULT_BOOST_FETCH_URL}")
-        FetchContent_Declare(Boost URL "${DEFAULT_BOOST_FETCH_URL}" SYSTEM)
-        FetchContent_MakeAvailable(Boost)
+    # List of boost components Metall depends on
+    set(BOOST_COMPS json unordered interprocess container property_tree uuid graph)
+    # Link Boost UUID with libatomic fails on LC machines
+    option(BOOST_UUID_LINK_LIBATOMIC "Link Boost UUID with libatomic" OFF)
+
+    if (BOOST_SOURCE_DIR)
+      fetch_boost(SOURCE ${BOOST_SOURCE_DIR} COMPONENTS ${BOOST_COMPS})
+    elseif (BOOST_FETCH_URL)
+      fetch_boost(URL ${BOOST_FETCH_URL} COMPONENTS ${BOOST_COMPS})
+    else ()
+      # Use default Boost version if not specified by the user
+      fetch_boost(URL "https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-cmake.tar.gz"
+                  COMPONENTS ${BOOST_COMPS})
     endif ()
 endif ()
-
-# Boost Components to link
-foreach (lib ${BOOST_INCLUDE_LIBRARIES})
-    list(APPEND BOOST_COMPONENTS "Boost::${lib}")
-endforeach ()
 
 # -------------------------------------------------------------------------------- #
 # Add executable functions
@@ -271,12 +261,12 @@ function(add_common_compile_options name)
 endfunction()
 
 function(common_setup_for_metall_executable name)
-    if (BOOST_INCLUDE_ROOT)
+    target_link_libraries(${name} PRIVATE Threads::Threads)
+   if (BOOST_INCLUDE_ROOT)
         target_include_directories(${name} PRIVATE ${BOOST_INCLUDE_ROOT})
     else()
-        target_link_libraries(${name} PRIVATE ${BOOST_COMPONENTS})
-    endif ()
-    target_link_libraries(${name} PRIVATE Threads::Threads)
+        target_link_libraries(${name} PRIVATE ${BOOST_LIBS})
+   endif ()
 
     # ----- Compile Options ----- #
     add_common_compile_options(${name})
