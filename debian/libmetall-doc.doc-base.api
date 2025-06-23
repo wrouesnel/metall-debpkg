@@ -1,0 +1,26 @@
+Document: metall-api
+Title: LLNL Metall API Documentation
+Author: LLNL <https://software.llnl.gov/metall/api/>
+Abstract: A memory allocator enables applications to transparently allocate data into a file system.
+ .
+ From applications, Metall looks like a normal heap allocator.
+ .
+ Applications can keep their data beyond single process life cycles and reattach the data in succeeding runs.
+ .
+ Leverages the memory-mapped file mechanism (i.e., mmap(2)) to map application data in files to the main memory.
+ .
+ Employs the API developed by Boost.Interprocess.
+ .
+     Useful for allocating C++ data structures (including STL containers).
+ .
+ Incorporates state-of-the-art allocation algorithms.
+ .
+ Provides a space-efficient snapshot/versioning, leveraging the reflink copy mechanism in file systems.
+ 
+ See details: Metall overview slides.
+ .
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/libmetall-doc/api/index.html
+Files: /usr/share/doc/libmetall-doc/api/*.html
