@@ -1,0 +1,5 @@
+build_doc/html/*.css usr/share/doc/libmetall-doc/api/
+build_doc/html/*.html usr/share/doc/libmetall-doc/api/
+build_doc/html/*.png usr/share/doc/libmetall-doc/api/
+build_doc/html/*.svg usr/share/doc/libmetall-doc/api/
+build_doc/html/*.js usr/share/doc/libmetall-doc/api/

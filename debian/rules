@@ -1,0 +1,29 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+  test := ON
+else
+  test := OFF
+endif
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DBUILD_TEST=$(test) \
+		-DBUILD_UTILITY=ON \
+		-DBUILD_DOC=ON \
+		-DBUILD_C=ON \
+		-DBUILD_SHARED_LIBS=ON \
+		-DSKIP_DOWNLOAD_GTEST=ON \
+		-DBOOST_INCLUDE_ROOT=/usr/include/boost
+
+ifeq (,$(filter nodoc,$(DEB_BUILD_OPTIONS)))
+execute_after_dh_auto_build:
+	mkdir build_doc
+	cd build_doc && doxygen ../docs/Doxyfile.in
+endif
+
+execute_after_dh_auto_clean:
+	$(RM) -r docs/html/

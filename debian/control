@@ -1,0 +1,49 @@
+Source: metall
+Homepage: https://github.com/LLNL/metall
+Section: libs
+Priority: optional
+Maintainer: Will Rouesnel <wrouesnel@wrouesnel.com>
+Build-Depends: debhelper-compat (= 13)
+Build-Depends-Indep: cmake (>= 3.20),
+                     doxygen <!nodoc>,
+                     libgtest-dev,
+                     libboost-dev (>= 1.83),
+                     libboost-json-dev (>= 1.83),
+Vcs-Browser: https://github.com/LLNL/metall
+Vcs-Git: https://github.com/LLNL/metall.git
+Standards-Version: 4.6.2
+
+Package: libmetall-dev
+Homepage: https://github.com/LLNL/metall
+Architecture: all
+Multi-Arch: foreign
+Section: libdevel
+Description: a memory allocator enabling applications to transparently allocate data into a file system.
+  METALL is a header-only library which enable applications to to transparently allocate data into a file system.
+  .
+  From applications, Metall looks like a normal heap allocator.
+  .
+  Applications can keep their data beyond single process life cycles and reattach the data in succeeding runs.
+  .
+  Leverages the memory-mapped file mechanism (i.e., mmap) to map application data in files to the main memory.
+
+Package: libmetall-bin
+Architecture: all
+Multi-Arch: foreign
+Section: doc
+Depends: ${misc:Depends}
+Description: binary utilities for the METALL allocator
+ METALL is a header-only library which enable applications to to transparently allocate data into a file system.
+ .
+ This package contains the METALL datastore_ls and mpi_datastore_ls commands.
+
+Package: libmetall-doc
+Architecture: all
+Multi-Arch: foreign
+Section: doc
+Depends: ${misc:Depends}
+Description: documentation for the METALL allocator
+ METALL is a header-only library which enable applications to to transparently allocate data into a file system.
+ .
+ This package contains the METALL manual and API documentation.
+
