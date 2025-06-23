@@ -13,6 +13,7 @@ override_dh_auto_configure:
 	dh_auto_configure -- \
 		-DBUILD_TEST=$(test) \
 		-DBUILD_UTILITY=ON \
+		-DBUILD_PKGCONFIG=ON \
 		-DBUILD_DOC=ON \
 		-DBUILD_C=ON \
 		-DBUILD_SHARED_LIBS=ON \

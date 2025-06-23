@@ -99,6 +99,7 @@ export(EXPORT ${PROJECT_NAME}Targets
 # -------------------------------------------------------------------------------- #
 option(JUST_INSTALL_METALL_HEADER "Just install Metall header files (do not build anything)" OFF)
 option(BUILD_UTILITY "Build utility programs" OFF)
+option(BUILD_PKGCONFIG "Build pkgconfig files" OFF)
 option(BUILD_DOC "Build API documentation" OFF)
 option(BUILD_C "Build C examples and libraries" OFF)
 option(BUILD_SHARED_LIBS "Generate shared libraries" OFF)
@@ -153,6 +154,19 @@ if (NOT (BUILD_UTILITY OR BUILD_C OR BUILD_EXAMPLE OR BUILD_BENCH OR BUILD_TEST 
     return()
 endif ()
 # -------------------------------------------------------------------------------- #
+
+# -------------------------------------------------------------------------------- #
+# pkg-config
+# -------------------------------------------------------------------------------- #
+
+if (BUILD_PKGCONFIG)
+    cmake_path(APPEND PKGCONFIG_INCLUDEDIR "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
+    configure_file("cmake/metall.pc.in" "metall.pc" @ONLY)
+    install(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/metall.pc"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/pkgconfig"
+    )
+endif ()
 
 # -------------------------------------------------------------------------------- #
 # Document (Doxygen)

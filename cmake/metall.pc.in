@@ -1,0 +1,8 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=@PKGCONFIG_INCLUDEDIR@
+
+Name: METALL
+Description: Metall: A Persistent Memory Allocator for Data-Centric Analytics
+URL: https://github.com/LLNL/metall
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir}
