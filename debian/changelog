@@ -1,5 +1,8 @@
-metall (0.31-0) UNRELEASED; urgency=medium
+metall (0.31-0wrouesnel1) noble; urgency=medium
 
   * Release v0.31 with initial packaging.
+  * Add a pkg-config install file
+  * Commit Debian 3.0 (quilt) metadata
+  * Add a docbase link
 
- -- Will Rouesnel <wrouesnel@wrouesnel.com>  Mon, 23 Jun 2025 20:50:39 +1000
+ -- Will Rouesnel <wrouesnel@wrouesnel.com>  Tue, 24 Jun 2025 01:22:37 +1000
