@@ -1,0 +1,54 @@
+From: Will Rouesnel <wrouesnel@wrouesnel.com>
+Date: Tue, 24 Jun 2025 01:07:32 +1000
+X-Dgit-Generated: 0.31-0 24aec08c95abf910f7a01c50d1e62c315a01fcc0
+Subject: Add a pkg-config install file
+
+
+---
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 068ed86..3517669 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -99,6 +99,7 @@ export(EXPORT ${PROJECT_NAME}Targets
+ # -------------------------------------------------------------------------------- #
+ option(JUST_INSTALL_METALL_HEADER "Just install Metall header files (do not build anything)" OFF)
+ option(BUILD_UTILITY "Build utility programs" OFF)
++option(BUILD_PKGCONFIG "Build pkgconfig files" OFF)
+ option(BUILD_DOC "Build API documentation" OFF)
+ option(BUILD_C "Build C examples and libraries" OFF)
+ option(BUILD_SHARED_LIBS "Generate shared libraries" OFF)
+@@ -154,6 +155,19 @@ if (NOT (BUILD_UTILITY OR BUILD_C OR BUILD_EXAMPLE OR BUILD_BENCH OR BUILD_TEST
+ endif ()
+ # -------------------------------------------------------------------------------- #
+ 
++# -------------------------------------------------------------------------------- #
++# pkg-config
++# -------------------------------------------------------------------------------- #
++
++if (BUILD_PKGCONFIG)
++    cmake_path(APPEND PKGCONFIG_INCLUDEDIR "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
++    configure_file("cmake/metall.pc.in" "metall.pc" @ONLY)
++    install(
++        FILES "${CMAKE_CURRENT_BINARY_DIR}/metall.pc"
++        DESTINATION "${CMAKE_INSTALL_DATADIR}/pkgconfig"
++    )
++endif ()
++
+ # -------------------------------------------------------------------------------- #
+ # Document (Doxygen)
+ # -------------------------------------------------------------------------------- #
+diff --git a/cmake/metall.pc.in b/cmake/metall.pc.in
+new file mode 100644
+index 0000000..db40823
+--- /dev/null
++++ b/cmake/metall.pc.in
+@@ -0,0 +1,8 @@
++prefix=@CMAKE_INSTALL_PREFIX@
++includedir=@PKGCONFIG_INCLUDEDIR@
++
++Name: METALL
++Description: Metall: A Persistent Memory Allocator for Data-Centric Analytics
++URL: https://github.com/LLNL/metall
++Version: @PROJECT_VERSION@
++Cflags: -I${includedir}
